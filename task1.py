@@ -1,5 +1,3 @@
-
-
 #Image Reading and Preparation:
 #   Function to read BMP header
 #   Open image file and separate header from image data
@@ -58,16 +56,18 @@
 #   Decrypt ECB and CBC encrypted images
 #   Display results
 
-
-# reads bmp header and returns the 54 bit headerdef
 def main():
-    def read_header(bmp):
-        with open(bmp, 'rb') as file:
-            # read the first 138 bytes
-            header = file.read(138)
-            print(header)
 
-    read_header('cp-logo.bmp')
+    # encrypt_image takes a file (string), mode (string), and potentially keys (strings) and creates an encrypted file using the given mode and key
+    def encrypt_image(img_filename, mode, key=None, iv=None):
+        with open(img_filename, 'rb') as file:
+            header = file.read(138) #read the first 138 bytes
+            header = header[:54]
+            img = file.read() #read rest of the image data
+
+        if mode == "ECB":
+            if key is None:
+                key = "js8eur8320j3imsio" #PLACEHOLDER FOR GENERATING KEY
 
 if __name__ == "__main__":
     main()
