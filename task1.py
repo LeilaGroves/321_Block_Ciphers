@@ -56,6 +56,8 @@
 #   Decrypt ECB and CBC encrypted images
 #   Display results
 
+from Crypto.Cipher import AES
+
 def main():
 
     # encrypt_image takes a file (string), mode (string), and potentially keys (strings) and creates an encrypted file using the given mode and key
@@ -63,11 +65,20 @@ def main():
         with open(img_filename, 'rb') as file:
             header = file.read(138) #read the first 138 bytes
             header = header[:54]
-            img = file.read() #read rest of the image data
+            plaintext = img_filename.read()[len(header):]#read rest of the image data
 
-        if mode == "ECB":
+
+        # following block given by Prof. Yocam
+        # Encrypt based on mode
+        if mode == 'ECB':
             if key is None:
-                key = "js8eur8320j3imsio" #PLACEHOLDER FOR GENERATING KEY
+                key = AES.new(key, AES.MODE_ECB)
+            ciphertext = ecb_encrypt(plaintext, key)
+            data = header + ciphertext
+        else:
+            ciphertext = cbc_encrypt(plaintext, key, iv)
+            data = header + iv + ciphertext
+
 
 if __name__ == "__main__":
     main()
