@@ -63,10 +63,8 @@ def main():
     # encrypt_image takes a file (string), mode (string), and potentially keys (strings) and creates an encrypted file using the given mode and key
     def encrypt_image(img_filename, mode, key=None, iv=None):
         with open(img_filename, 'rb') as file:
-            header = file.read(138) #read the first 138 bytes
-            header = header[:54]
-            plaintext = img_filename.read()[len(header):]#read rest of the image data
-
+            header = file.read(54)
+            plaintext = file.read()[len(header):] #read rest of the image data
 
         # following block given by Prof. Yocam
         # Encrypt based on mode
@@ -79,6 +77,13 @@ def main():
             ciphertext = cbc_encrypt(plaintext, key, iv)
             data = header + iv + ciphertext
 
+    def ecb_encrypt(plaintext, key):
+        return "test"
+
+    def cbc_encrypt(plaintext, key, iv):
+        return "test"
+
+    encrypt_image('cp-logo.bmp', 'ECB')
 
 if __name__ == "__main__":
     main()
