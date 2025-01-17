@@ -57,6 +57,7 @@
 #   Display results
 
 from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
 
 def main():
 
@@ -66,22 +67,32 @@ def main():
             header = file.read(54)
             plaintext = file.read()[len(header):] #read rest of the image data
 
-        # following block given by Prof. Yocam
+        # padding
+        bits = len(plaintext)
+        remainder = bits % 128
+        for i in range(remainder):
+            plaintext.append(hex(remainder))
+
+        # following block given by Prof.
         # Encrypt based on mode
+        if key is None:
+            key = get_random_bytes(16)
+
         if mode == 'ECB':
-            if key is None:
-                key = AES.new(key, AES.MODE_ECB)
             ciphertext = ecb_encrypt(plaintext, key)
             data = header + ciphertext
-        else:
+        else: #mode is CBC
+            if iv is None:
+                iv = get_random_bytes(16)
             ciphertext = cbc_encrypt(plaintext, key, iv)
             data = header + iv + ciphertext
 
     def ecb_encrypt(plaintext, key):
-        return "test"
+        cipher = AES.new(key, AES.MODE_ECB)
+        return cipher
 
     def cbc_encrypt(plaintext, key, iv):
-        return "test"
+        return AES.new(key, AES.MODE_ECB)
 
     encrypt_image('cp-logo.bmp', 'ECB')
 
