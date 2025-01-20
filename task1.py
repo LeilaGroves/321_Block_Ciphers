@@ -65,13 +65,12 @@ def main():
     def encrypt_image(img_filename, mode, key=None, iv=None):
         with open(img_filename, 'rb') as file:
             header = file.read(54)
-            plaintext = file.read()[len(header):] #read rest of the image data
+            plaintext = file.read() #read rest of the image data
 
         # padding
-        bits = len(plaintext)
-        remainder = bits % 128
-        for i in range(remainder):
-            plaintext.append(hex(remainder))
+        padding_size = 16 - (len(plaintext) % 16) #compute # padding bytes
+        padding = bytes([padding_size] * padding_size) # creates padding_size bytes of value padding_size
+        padded_plaintext = padding + plaintext
 
         # following block given by Prof.
         # Encrypt based on mode
@@ -79,20 +78,28 @@ def main():
             key = get_random_bytes(16)
 
         if mode == 'ECB':
-            ciphertext = ecb_encrypt(plaintext, key)
-            data = header + ciphertext
+            output = header + ecb_encrypt(padded_plaintext, key)
         else: #mode is CBC
             if iv is None:
                 iv = get_random_bytes(16)
-            ciphertext = cbc_encrypt(plaintext, key, iv)
-            data = header + iv + ciphertext
+            output = header + cbc_encrypt(padded_plaintext, key, iv)
+
+        # write encrypted date to file
+        with open(f"{img_filename.replace('.bmp', '')}_{mode}_encrypted.bmp", "wb") as file:
+            file.write(output)
+
+        print("encrypted image", img_filename, "in mode", mode)
 
     def ecb_encrypt(plaintext, key):
         cipher = AES.new(key, AES.MODE_ECB)
-        return cipher
+        ciphertext = bytes(0)
+        for i in range(0, len(plaintext), 16):
+            ciphertext += cipher.encrypt(plaintext[i:i + 16]) #encrypt one block
+        return ciphertext
 
     def cbc_encrypt(plaintext, key, iv):
-        return AES.new(key, AES.MODE_ECB)
+        cipher = AES.new(key, AES.MODE_ECB)
+        return plaintext
 
     encrypt_image('cp-logo.bmp', 'ECB')
 
