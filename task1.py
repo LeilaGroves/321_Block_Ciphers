@@ -11,7 +11,7 @@ def encrypt_image(img_filename, mode, key=None, iv=None):
     #add padding
     padded_plaintext = pad(plaintext)
 
-    # following block given by Prof.
+    # following code given by Prof.
     # Encrypt based on mode
     if key is None:
         key = get_random_bytes(16)
@@ -47,16 +47,19 @@ def ecb_encrypt(plaintext, key):
 
 # takes plaintext (bytes), an iv, a cipher, and ciphertext (bytes) and returns plaintext encrypted in CBC mode
 def cbc_encrypt(plaintext, key, iv):
-    cipher = AES.new(key, AES.MODE_ECB)  # user MODE_ECB for both because MODE_CBC automatically xors it
+    cipher = AES.new(key, AES.MODE_ECB)  # user MODE_ECB to manually implement CBC
     ciphertext = bytes(0)
     prev_block = iv
-    for i in range(16, len(plaintext), 16):
+
+    for i in range(0, len(plaintext), 16):
         block = plaintext[i:i + 16]
         xor_block = bytes(a ^ b for a, b in zip(block, prev_block)) #xor bytes to prev_block
-        ciphertext += cipher.encrypt(xor_block)
-        prev_block = xor_block
+        encrypted_block = cipher.encrypt(xor_block)
+        ciphertext += encrypted_block
+        prev_block = encrypted_block
+
     return ciphertext
 
 if __name__ == '__main__':
     #test
-    encrypt_image('cp-logo.bmp', 'ECB')
+    encrypt_image('cp-logo.bmp', 'CBC')
