@@ -14,6 +14,7 @@ def submit(input_txt):
     input_txt = re.sub(":", "%58", input_txt)
 
     full_msg = f"userid=456;userdata={input_txt};session-id=31337"
+    slash_pos = full_msg.index('/') # Find position of '/'
 
     msg_bytes = full_msg.encode("utf-8") #turn msg into bytes
     padded_txt = pad(msg_bytes) # encode to turn full_msg into bytes
@@ -21,36 +22,20 @@ def submit(input_txt):
     print("plaintext before encryption", padded_txt)
     encrypted = task1.cbc_encrypt(padded_txt, key, iv)
     print("Encrypted text", encrypted)
-    return encrypted
+    return encrypted, slash_pos
 
 # Verify takes
 def verify(encrypted_input):
     cipher = AES.new(key, AES.MODE_CBC, iv)
     decrypted = cipher.decrypt(encrypted_input) #decrypt input using AES library
-    decrypted = unpad(decrypted).decode("utf-8") #unpad it and decode into a string
     print("Decrypted input:", decrypted)
-    return ";admin=true" in decrypted
+    return "admin=true" in decrypted
 
 # performs a bit flip attack making verify return true
-def attack(message):
-    message = b'userid=456;userdata=admin/true;session-id=31337'
-    print(f"Plaintext before byte-flip: {message.decode('ascii')}")
-
-    # Generate key and IV
-    key = get_random_bytes(16)
-    iv = get_random_bytes(16)
-
-    # Find position of '/'
-    slash_pos = message.index(b'/')
-
-    # Encrypt
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    padded_message = pad(message)
-    ciphertext = cipher.encrypt(padded_message)
-
+def attack(message, slash_pos):
     # Show ciphertext before the flip
     print("\nBefore admin/true - Ciphertext (hex):")
-    ciphertext_hex = ''.join([hex(x)[2:].zfill(2) for x in ciphertext])
+    ciphertext_hex = ''.join([hex(x)[2:].zfill(2) for x in message])
     print(ciphertext_hex)
 
     # Calculate which block needs modification
@@ -59,7 +44,7 @@ def attack(message):
     prev_block_start = (block_num - 1) * 16 # Start of previous block
 
     # XOR the byte in previous block
-    modified_ciphertext = bytearray(ciphertext)
+    modified_ciphertext = bytearray(message)
     modified_ciphertext[prev_block_start + pos_in_prev_block] ^= (ord('/') ^ ord('='))
 
     # Show ciphertext after the flip
@@ -69,13 +54,14 @@ def attack(message):
 
     # Show the changed byte
     print(f"\nChanged byte position: {prev_block_start + pos_in_prev_block}")
-    print(f"Original byte: {hex(ciphertext[prev_block_start + pos_in_prev_block])[2:].zfill(2)}")
+    print(f"Original byte: {hex(message[prev_block_start + pos_in_prev_block])[2:].zfill(2)}")
     print(f"Modified byte: {hex(modified_ciphertext[prev_block_start + pos_in_prev_block])[2:].zfill(2)}")
 
     # Decrypt modified ciphertext
     cipher = AES.new(key, AES.MODE_CBC, iv)
     decrypted = cipher.decrypt(modified_ciphertext)
     print(f"\nPlaintext after byte-flip:", decrypted)
+    return modified_ciphertext
 
 # takes message (string) and adds padding using PKCS#7 method
 def pad(message):
@@ -89,6 +75,7 @@ def unpad(message):
     return message[:-padding_length]
 
 if __name__ == '__main__':
-    #sub = submit("admin/true")
+    sub, pos = submit("admin/true")
+    print(attack(sub, pos))
     # print(verify(sub))
-    print(attack(b'userid=456;userdata=admin/true;session-id=31337'))
+    # print(verify(attack(b'userid=456;userdata=admin/true;session-id=31337')))
