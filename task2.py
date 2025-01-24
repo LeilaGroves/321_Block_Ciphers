@@ -29,7 +29,7 @@ def verify(encrypted_input):
     cipher = AES.new(key, AES.MODE_CBC, iv)
     decrypted = cipher.decrypt(encrypted_input) #decrypt input using AES library
     print("Decrypted input:", decrypted)
-    return "admin=true" in decrypted
+    return b"admin=true" in decrypted
 
 # performs a bit flip attack making verify return true
 def attack(message, slash_pos):
@@ -61,7 +61,7 @@ def attack(message, slash_pos):
     cipher = AES.new(key, AES.MODE_CBC, iv)
     decrypted = cipher.decrypt(modified_ciphertext)
     print(f"\nPlaintext after byte-flip:", decrypted)
-    return modified_ciphertext
+    return bytes(modified_ciphertext)
 
 # takes message (string) and adds padding using PKCS#7 method
 def pad(message):
@@ -76,6 +76,6 @@ def unpad(message):
 
 if __name__ == '__main__':
     sub, pos = submit("admin/true")
-    print(attack(sub, pos))
-    # print(verify(sub))
-    # print(verify(attack(b'userid=456;userdata=admin/true;session-id=31337')))
+    mod = attack(sub, pos)
+    print("Verify result without flipped bit:", verify(sub))
+    print("Verify result with flipped bit:", verify(mod))
