@@ -7,50 +7,54 @@ def pad(message):
     return message + padding
 
 # Original message
-message = b'userid=456;userdata=admin/true;session-id=31337'
-print(f"Plaintext before byte-flip: {message.decode('ascii')}")
+def main():
+    message = b'userid=456;userdata=admin/true;session-id=31337'
+    print(f"Plaintext before byte-flip: {message.decode('ascii')}")
 
-# Generate key and IV
-key = get_random_bytes(16)
-iv = get_random_bytes(16)
+    # Generate key and IV
+    key = get_random_bytes(16)
+    iv = get_random_bytes(16)
 
-# Find position of '/'
-slash_pos = message.index(b'/')
+    # Find position of '/'
+    slash_pos = message.index(b'/')
 
-# Encrypt
-cipher = AES.new(key, AES.MODE_CBC, iv)
-padded_message = pad(message)
-ciphertext = cipher.encrypt(padded_message)
+    # Encrypt
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    padded_message = pad(message)
+    ciphertext = cipher.encrypt(padded_message)
 
-# Show ciphertext before the flip
-print("\nBefore admin/true - Ciphertext (hex):")
-ciphertext_hex = ''.join([hex(x)[2:].zfill(2) for x in ciphertext])
-print(ciphertext_hex)
+    # Show ciphertext before the flip
+    print("\nBefore admin/true - Ciphertext (hex):")
+    ciphertext_hex = ''.join([hex(x)[2:].zfill(2) for x in ciphertext])
+    print(ciphertext_hex)
 
-# Calculate which block needs modification
-block_num = (slash_pos // 16) # Block containing the target byte
-pos_in_prev_block = slash_pos % 16
-prev_block_start = (block_num - 1) * 16 # Start of previous block
+    # Calculate which block needs modification
+    block_num = (slash_pos // 16) # Block containing the target byte
+    pos_in_prev_block = slash_pos % 16
+    prev_block_start = (block_num - 1) * 16 # Start of previous block
 
-# XOR the byte in previous block
-modified_ciphertext = bytearray(ciphertext)
-modified_ciphertext[prev_block_start + pos_in_prev_block] ^= (ord('/') ^ ord('='))
+    # XOR the byte in previous block
+    modified_ciphertext = bytearray(ciphertext)
+    modified_ciphertext[prev_block_start + pos_in_prev_block] ^= (ord('/') ^ ord('='))
 
-# Show ciphertext after the flip
-print("\nAfter admin=true - Ciphertext (hex):")
-modified_hex = ''.join([hex(x)[2:].zfill(2) for x in modified_ciphertext])
-print(modified_hex)
+    # Show ciphertext after the flip
+    print("\nAfter admin=true - Ciphertext (hex):")
+    modified_hex = ''.join([hex(x)[2:].zfill(2) for x in modified_ciphertext])
+    print(modified_hex)
 
-# Show the changed byte
-print(f"\nChanged byte position: {prev_block_start + pos_in_prev_block}")
-print(f"Original byte: {hex(ciphertext[prev_block_start + pos_in_prev_block])[2:].zfill(2)}")
-print(f"Modified byte: {hex(modified_ciphertext[prev_block_start + pos_in_prev_block])[2:].zfill(2)}")
+    # Show the changed byte
+    print(f"\nChanged byte position: {prev_block_start + pos_in_prev_block}")
+    print(f"Original byte: {hex(ciphertext[prev_block_start + pos_in_prev_block])[2:].zfill(2)}")
+    print(f"Modified byte: {hex(modified_ciphertext[prev_block_start + pos_in_prev_block])[2:].zfill(2)}")
 
-# Decrypt modified ciphertext
-cipher = AES.new(key, AES.MODE_CBC, iv)
-decrypted = cipher.decrypt(modified_ciphertext)
-print(f"\nPlaintext after byte-flip:", decrypted)
+    # Decrypt modified ciphertext
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    decrypted = cipher.decrypt(modified_ciphertext)
+    print(f"\nPlaintext after byte-flip:", decrypted)
 
+
+if __name__ == "__main__":
+    main()
 # Plaintext before byte-flip: userid=456;userdata=admin/true;session-id=31337
 # Before admin/true - Ciphertext (hex):
 # 9511f51e9a6069323cde133ef6eb20a4adc7ed26ae11a7f6acc3544e0689de1f970ec51684a5c71f6b77c6428748cccf
